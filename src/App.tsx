@@ -1,0 +1,666 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { MapPin, Clock, Car, DollarSign, Cloud, Plus, X, Navigation, AlertTriangle, Shield, Volume2, Download, Sparkles, Calendar, History } from 'lucide-react';
+
+const AdventureApp = () => {
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [startingPoint, setStartingPoint] = useState('');
+  const [selectedPOIs, setSelectedPOIs] = useState([]);
+  const [itinerary, setItinerary] = useState([]);
+  const [weather, setWeather] = useState(null);
+  const [currentView, setCurrentView] = useState('planning');
+  const [privacyMode, setPrivacyMode] = useState(false);
+  const [offlineMode, setOfflineMode] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [userPreferences, setUserPreferences] = useState({
+    interests: [],
+    mobilityLevel: 'moderate',
+    timePreference: 'flexible'
+  });
+  const speechSynthesis = useRef(null);
+
+  // Sample data for demonstration
+  const regions = [
+    'Blue Ridge Mountains, VA',
+    'Appalachian Trail, NH',
+    'Historic Boston, MA',
+    'Colonial Williamsburg, VA',
+    'Great Smoky Mountains, TN'
+  ];
+
+  const samplePOIs = {
+    'Blue Ridge Mountains, VA': [
+      {
+        id: 1,
+        name: 'Monticello',
+        type: 'Historic Site',
+        description: 'Thomas Jefferson\'s mountaintop home',
+        walkTime: 45,
+        observationTime: 90,
+        admission: '$29',
+        parking: 'Free',
+        coordinates: { lat: 38.0084, lng: -78.4534 },
+        historicalPeriod: '1769-1826',
+        historicalSignificance: 'Designed by Thomas Jefferson, showcases neoclassical architecture and Enlightenment ideals',
+        accessibility: 'Wheelchair accessible grounds, shuttle available',
+        bestTimeToVisit: '9:00 AM - 11:00 AM (fewer crowds)',
+        offlineContent: true
+      },
+      {
+        id: 2,
+        name: 'Shenandoah Falls Trail',
+        type: 'Natural Feature',
+        description: 'Scenic waterfall with moderate hiking trail',
+        walkTime: 120,
+        observationTime: 30,
+        admission: 'Free',
+        parking: '$5',
+        coordinates: { lat: 38.1234, lng: -78.5678 },
+        historicalPeriod: 'Geological formation: 200M+ years',
+        historicalSignificance: 'Used by Native American tribes for centuries, later by European settlers',
+        accessibility: 'Moderate difficulty, uneven terrain',
+        bestTimeToVisit: '7:00 AM - 9:00 AM (best lighting)',
+        offlineContent: true
+      },
+      {
+        id: 3,
+        name: 'Ash Lawn-Highland',
+        type: 'Historic Site',
+        description: 'James Monroe\'s historic estate',
+        walkTime: 30,
+        observationTime: 60,
+        admission: '$15',
+        parking: 'Free',
+        coordinates: { lat: 37.9876, lng: -78.4321 },
+        historicalPeriod: '1799-1823',
+        historicalSignificance: '5th U.S. President\'s home, showcases early American domestic life',
+        accessibility: 'Partially accessible, some uneven paths',
+        bestTimeToVisit: '10:00 AM - 12:00 PM',
+        offlineContent: true
+      }
+    ],
+    'Historic Boston, MA': [
+      {
+        id: 4,
+        name: 'Freedom Trail - Boston Common',
+        type: 'Historic Trail',
+        description: 'Start of the famous Freedom Trail',
+        walkTime: 20,
+        observationTime: 30,
+        admission: 'Free',
+        parking: '$25/day',
+        coordinates: { lat: 42.3551, lng: -71.0656 },
+        historicalPeriod: '1634-present',
+        historicalSignificance: 'America\'s oldest public park, central to Revolutionary War events',
+        accessibility: 'Fully accessible paths available',
+        bestTimeToVisit: '8:00 AM - 10:00 AM',
+        offlineContent: true
+      },
+      {
+        id: 5,
+        name: 'Paul Revere House',
+        type: 'Historic Site',
+        description: 'Home of the famous midnight rider',
+        walkTime: 15,
+        observationTime: 45,
+        admission: '$6',
+        parking: 'Street parking',
+        coordinates: { lat: 42.3634, lng: -71.0536 },
+        historicalPeriod: '1680-1800',
+        historicalSignificance: 'Oldest building in downtown Boston, home of Revolutionary War hero',
+        accessibility: 'Historic building - limited accessibility',
+        bestTimeToVisit: '9:30 AM - 11:30 AM',
+        offlineContent: true
+      }
+    ]
+  };
+
+  const mockWeather = {
+    condition: 'Partly Cloudy',
+    temperature: '72°F',
+    precipitation: '10%',
+    alerts: ['UV Index High - Bring sunscreen', 'Afternoon thunderstorms possible']
+  };
+
+  useEffect(() => {
+    // Simulate weather API call
+    setWeather(mockWeather);
+    
+    // Initialize speech synthesis
+    if ('speechSynthesis' in window) {
+      speechSynthesis.current = window.speechSynthesis;
+    }
+    
+    // Generate AI suggestions based on user preferences
+    generateAISuggestions();
+  }, [selectedRegion, userPreferences]);
+
+  const speak = (text) => {
+    if (voiceEnabled && speechSynthesis.current) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      speechSynthesis.current.speak(utterance);
+    }
+  };
+
+  const generateAISuggestions = () => {
+    // Simulate AI-powered suggestions
+    if (selectedRegion && availablePOIs.length > 0) {
+      const suggestions = [
+        {
+          id: 'ai-1',
+          title: 'Historical Timeline Journey',
+          description: 'Visit sites in chronological order to experience history unfolding',
+          estimatedTime: '6h 30m',
+          difficulty: 'Easy',
+          theme: 'Historical Progression'
+        },
+        {
+          id: 'ai-2',
+          title: 'Founding Fathers Focus',
+          description: 'Explore locations connected to key Revolutionary figures',
+          estimatedTime: '4h 15m',
+          difficulty: 'Moderate',
+          theme: 'Biographical'
+        },
+        {
+          id: 'ai-3',
+          title: 'Architecture Through Time',
+          description: 'Compare building styles across different historical periods',
+          estimatedTime: '5h 45m',
+          difficulty: 'Easy',
+          theme: 'Architectural'
+        }
+      ];
+      setAiSuggestions(suggestions);
+    }
+  };
+
+  const optimizeItinerary = () => {
+    // Simulate TSP optimization
+    const optimized = [...itinerary].sort((a, b) => {
+      // Sort by best visiting time first, then by proximity (simplified)
+      const timeA = parseInt(a.bestTimeToVisit?.split(':')[0] || '12');
+      const timeB = parseInt(b.bestTimeToVisit?.split(':')[0] || '12');
+      return timeA - timeB;
+    });
+    setItinerary(optimized);
+    speak('Itinerary optimized for best visiting times and travel efficiency.');
+  };
+
+  const downloadOfflineContent = () => {
+    // Simulate downloading offline content
+    setOfflineMode(true);
+    speak('Offline content downloaded. Maps and site information available without internet.');
+  };
+
+  const addPOIToItinerary = (poi) => {
+    if (!itinerary.find(item => item.id === poi.id)) {
+      setItinerary([...itinerary, { ...poi, order: itinerary.length + 1 }]);
+    }
+  };
+
+  const removePOIFromItinerary = (poiId) => {
+    setItinerary(itinerary.filter(item => item.id !== poiId));
+  };
+
+  const calculateTotalTime = () => {
+    const totalMinutes = itinerary.reduce((total, poi) => {
+      return total + poi.walkTime + poi.observationTime;
+    }, 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
+  const calculateTotalCost = () => {
+    let totalCost = 0;
+    const parkingCosts = new Set();
+    
+    itinerary.forEach(poi => {
+      // Add admission costs
+      if (poi.admission !== 'Free') {
+        const cost = parseInt(poi.admission.replace('$', ''));
+        totalCost += cost;
+      }
+      
+      // Track unique parking costs
+      if (poi.parking !== 'Free' && poi.parking !== 'Street parking') {
+        parkingCosts.add(poi.parking);
+      }
+    });
+    
+    // Add parking costs (assuming one parking fee per unique location)
+    parkingCosts.forEach(parking => {
+      const cost = parseInt(parking.replace('$', '').split('/')[0]);
+      totalCost += cost;
+    });
+    
+    return totalCost;
+  };
+
+  const availablePOIs = selectedRegion ? samplePOIs[selectedRegion] || [] : [];
+
+  return (
+    <div className="max-w-6xl mx-auto p-6 bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
+      <header className="text-center mb-8">
+        <h1 className="text-4xl font-bold text-green-800 mb-2">🏔️ TrailQuest</h1>
+        <p className="text-gray-600">Plan your perfect outdoor historical adventure</p>
+      </header>
+
+      {/* Navigation Tabs */}
+      <div className="flex mb-6 bg-white rounded-lg p-1 shadow-sm">
+        <button
+          className={`flex-1 py-2 px-4 rounded ${currentView === 'planning' ? 'bg-green-500 text-white' : 'text-gray-600'}`}
+          onClick={() => setCurrentView('planning')}
+        >
+          Trip Planning
+        </button>
+        <button
+          className={`flex-1 py-2 px-4 rounded ${currentView === 'itinerary' ? 'bg-green-500 text-white' : 'text-gray-600'}`}
+          onClick={() => setCurrentView('itinerary')}
+        >
+          My Itinerary
+        </button>
+        <button
+          className={`flex-1 py-2 px-4 rounded ${currentView === 'settings' ? 'bg-green-500 text-white' : 'text-gray-600'}`}
+          onClick={() => setCurrentView('settings')}
+        >
+          Settings & AI
+        </button>
+      </div>
+
+      {currentView === 'planning' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Planning Panel */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-semibold mb-4 flex items-center">
+              <Navigation className="mr-2 text-green-600" />
+              Plan Your Adventure
+            </h2>
+            
+            {/* Region Selection */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Region
+              </label>
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              >
+                <option value="">Choose a region...</option>
+                {regions.map(region => (
+                  <option key={region} value={region}>{region}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date Selection */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Trip Date
+              </label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
+            </div>
+
+            {/* Starting Point */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Starting Point
+              </label>
+              <input
+                type="text"
+                value={startingPoint}
+                onChange={(e) => setStartingPoint(e.target.value)}
+                placeholder="Enter your starting location"
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
+            </div>
+
+            {/* Weather Alert */}
+            {weather && (
+              <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 className="font-semibold text-blue-800 flex items-center mb-2">
+                  <Cloud className="mr-2" size={16} />
+                  Weather Conditions
+                </h3>
+                <p className="text-sm text-blue-700 mb-2">
+                  {weather.condition} | {weather.temperature} | Rain: {weather.precipitation}
+                </p>
+                {weather.alerts.map((alert, index) => (
+                  <div key={index} className="flex items-center text-sm text-orange-700 mb-1">
+                    <AlertTriangle size={14} className="mr-1" />
+                    {alert}
+                  </div>
+                ))}
+              </div>
+            )}
+
+      {currentView === 'settings' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Privacy & Accessibility Settings */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-semibold mb-4 flex items-center">
+              <Shield className="mr-2 text-blue-600" />
+              Privacy & Accessibility
+            </h2>
+            
+            {/* Privacy Settings */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-3">Privacy Controls</h3>
+              <div className="space-y-3">
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={privacyMode}
+                    onChange={(e) => setPrivacyMode(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="text-sm">
+                    Privacy Mode (Location data stored locally only)
+                  </span>
+                </label>
+                <label className="flex items-center space-x-3">
+                  <input type="checkbox" className="rounded" />
+                  <span className="text-sm">Anonymous usage analytics</span>
+                </label>
+                <label className="flex items-center space-x-3">
+                  <input type="checkbox" defaultChecked className="rounded" />
+                  <span className="text-sm">Cache maps for offline use</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Accessibility Settings */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-3">Accessibility</h3>
+              <div className="space-y-3">
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={voiceEnabled}
+                    onChange={(e) => setVoiceEnabled(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Voice guidance enabled</span>
+                </label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mobility Level
+                  </label>
+                  <select 
+                    value={userPreferences.mobilityLevel}
+                    onChange={(e) => setUserPreferences({...userPreferences, mobilityLevel: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="high">High mobility (challenging trails)</option>
+                    <option value="moderate">Moderate mobility (standard trails)</option>
+                    <option value="low">Limited mobility (accessible paths only)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Offline Mode */}
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h3 className="font-semibold text-green-800 mb-2">Offline Capabilities</h3>
+              <p className="text-sm text-green-700 mb-3">
+                Download content for offline use in remote areas
+              </p>
+              <button
+                onClick={downloadOfflineContent}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center"
+              >
+                <Download className="mr-2" size={16} />
+                {offlineMode ? 'Offline Ready ✓' : 'Download Offline Content'}
+              </button>
+            </div>
+          </div>
+
+          {/* AI Suggestions */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-semibold mb-4 flex items-center">
+              <Sparkles className="mr-2 text-purple-600" />
+              AI Trip Suggestions
+            </h2>
+            
+            {/* User Preferences */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-3">Your Interests</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {['Architecture', 'Military History', 'Political History', 'Natural History', 'Art & Culture', 'Local Legends'].map(interest => (
+                  <label key={interest} className="flex items-center space-x-2">
+                    <input type="checkbox" className="rounded" />
+                    <span className="text-sm">{interest}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* AI Suggestions */}
+            {aiSuggestions.length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium mb-3">Recommended Itineraries</h3>
+                <div className="space-y-3">
+                  {aiSuggestions.map(suggestion => (
+                    <div key={suggestion.id} className="border rounded-lg p-4 hover:bg-purple-50">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-medium text-purple-800">{suggestion.title}</h4>
+                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                          {suggestion.difficulty}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{suggestion.description}</p>
+                      <div className="flex justify-between items-center text-xs text-gray-500">
+                        <span className="flex items-center">
+                          <Clock className="mr-1" size={12} />
+                          {suggestion.estimatedTime}
+                        </span>
+                        <span className="flex items-center">
+                          <History className="mr-1" size={12} />
+                          {suggestion.theme}
+                        </span>
+                      </div>
+                      <button className="mt-2 bg-purple-600 text-white px-3 py-1 text-xs rounded hover:bg-purple-700">
+                        Apply Suggestion
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Historical Timeline View */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <h3 className="font-semibold text-blue-800 mb-2 flex items-center">
+                <History className="mr-2" size={16} />
+                Historical Timeline Planning
+              </h3>
+              <p className="text-sm text-blue-700 mb-3">
+                Organize visits chronologically to understand historical progression
+              </p>
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                Generate Timeline Route
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+            {/* Points of Interest */}
+            {availablePOIs.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Available Points of Interest</h3>
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {availablePOIs.map(poi => (
+                    <div key={poi.id} className="border rounded-lg p-3 hover:bg-gray-50">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-medium text-gray-900">{poi.name}</h4>
+                        <button
+                          onClick={() => addPOIToItinerary(poi)}
+                          className="bg-green-500 text-white p-1 rounded-full hover:bg-green-600"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{poi.description}</p>
+                      <div className="text-xs text-blue-700 mb-2 bg-blue-50 p-2 rounded">
+                        <strong>Historical Context:</strong> {poi.historicalSignificance}
+                        <br />
+                        <strong>Period:</strong> {poi.historicalPeriod}
+                        <br />
+                        <strong>Best Time:</strong> {poi.bestTimeToVisit}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                        <span className="flex items-center">
+                          <Clock className="mr-1" size={12} />
+                          {poi.walkTime + poi.observationTime}min total
+                        </span>
+                        <span className="flex items-center">
+                          <DollarSign className="mr-1" size={12} />
+                          {poi.admission}
+                        </span>
+                        <span className="flex items-center">
+                          <Car className="mr-1" size={12} />
+                          Parking: {poi.parking}
+                        </span>
+                        <span className="text-green-600 font-medium">{poi.type}</span>
+                      </div>
+                      <div className="mt-2 text-xs text-purple-600">
+                        <strong>Accessibility:</strong> {poi.accessibility}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Map Placeholder */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <MapPin className="mr-2 text-green-600" />
+              Route Map
+            </h3>
+            <div className="bg-gradient-to-br from-green-100 to-blue-100 rounded-lg h-96 flex items-center justify-center text-gray-600">
+              <div className="text-center">
+                <MapPin size={48} className="mx-auto mb-4 text-green-500" />
+                <p className="text-lg font-medium">Interactive Map</p>
+                <p className="text-sm">Route visualization with elevation profile</p>
+                <p className="text-xs mt-2">Select POIs to see them plotted on the map</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {currentView === 'itinerary' && (
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Your Day Trip Itinerary</h2>
+          
+          {itinerary.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <MapPin size={48} className="mx-auto mb-4 text-gray-300" />
+              <p>No destinations added yet. Go to Trip Planning to add points of interest.</p>
+            </div>
+          ) : (
+            <>
+              {/* Trip Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-green-50 rounded-lg">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-700">{itinerary.length}</div>
+                  <div className="text-sm text-green-600">Destinations</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-700">{calculateTotalTime()}</div>
+                  <div className="text-sm text-green-600">Total Time</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-700">${calculateTotalCost()}</div>
+                  <div className="text-sm text-green-600">Estimated Cost</div>
+                </div>
+              </div>
+
+              {/* Itinerary Items */}
+              <div className="space-y-4">
+                {itinerary.map((poi, index) => (
+                  <div key={poi.id} className="border-l-4 border-green-500 bg-gray-50 p-4 rounded-r-lg">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center">
+                        <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3">
+                          {index + 1}
+                        </span>
+                        <div>
+                          <h3 className="font-semibold text-lg">{poi.name}</h3>
+                          <p className="text-gray-600 text-sm">{poi.description}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removePOIFromItinerary(poi.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="flex items-center text-gray-700">
+                        <Clock className="mr-1" size={14} />
+                        Walk: {poi.walkTime}min
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <Clock className="mr-1" size={14} />
+                        Visit: {poi.observationTime}min
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <DollarSign className="mr-1" size={14} />
+                        Entry: {poi.admission}
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <Car className="mr-1" size={14} />
+                        Parking: {poi.parking}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-6 flex flex-wrap gap-4">
+                <button 
+                  onClick={optimizeItinerary}
+                  className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 flex items-center"
+                >
+                  <Sparkles className="mr-2" size={16} />
+                  Optimize Route
+                </button>
+                <button className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 flex items-center">
+                  <Navigation className="mr-2" size={16} />
+                  Start Navigation
+                </button>
+                <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                  Export Itinerary
+                </button>
+                <button 
+                  onClick={() => speak(`Your itinerary includes ${itinerary.length} destinations with a total time of ${calculateTotalTime()}`)}
+                  className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 flex items-center"
+                >
+                  <Volume2 className="mr-2" size={16} />
+                  Read Aloud
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdventureApp;
