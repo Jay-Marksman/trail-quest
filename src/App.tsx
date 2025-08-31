@@ -13,6 +13,11 @@ import ItineraryPanel from './ItineraryPanel';
 import SettingsPanel from './SettingsPanel';
 import AISuggestionsPanel from './AISuggestionsPanel';
 
+//interface NavigationTabsProps {
+//  currentView: 'planning' | 'itinerary' | 'settings';
+//  setCurrentView: (view: 'planning' | 'itinerary' | 'settings') => void;
+//}
+
 const AdventureApp = () => {
   const [selectedRegion, setSelectedRegion] = useState<string>('');
   const [startingPoint, setStartingPoint] = useState<string>('');
