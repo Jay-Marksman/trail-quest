@@ -662,5 +662,4 @@ const AdventureApp = () => {
     </div>
   );
 };
-
 export default AdventureApp;
