@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useSpeech } from './useSpeech';
 import { useItinerary } from './useItinerary';
 import { useAISuggestions } from './useAISuggestions';
-import { regions, samplePOIs, mockWeather } from './sampleData';
+import { samplePOIs, mockWeather } from './sampleData';
 import { Weather, UserPreferences } from './types';
 import NavigationTabs from './NavigationTabs';
 import PlanningPanel from './PlanningPanel';
@@ -12,11 +12,6 @@ import MapPanel from './MapPanel';
 import ItineraryPanel from './ItineraryPanel';
 import SettingsPanel from './SettingsPanel';
 import AISuggestionsPanel from './AISuggestionsPanel';
-
-//interface NavigationTabsProps {
-//  currentView: 'planning' | 'itinerary' | 'settings';
-//  setCurrentView: (view: 'planning' | 'itinerary' | 'settings') => void;
-//}
 
 const AdventureApp = () => {
   const [selectedRegion, setSelectedRegion] = useState<string>('');
@@ -35,7 +30,10 @@ const AdventureApp = () => {
 
   const speak = useSpeech(voiceEnabled);
 
-  const availablePOIs = selectedRegion ? samplePOIs[selectedRegion] || [] : [];
+  const availablePOIs = React.useMemo(
+    () => (selectedRegion ? samplePOIs[selectedRegion] || [] : []),
+    [selectedRegion]
+  );
   const aiSuggestions = useAISuggestions(selectedRegion, availablePOIs, userPreferences);
   const { itinerary, addPOI, removePOI, optimizeItinerary: optimize, calculateTotalTime, calculateTotalCost } = useItinerary();
 
@@ -48,7 +46,7 @@ const AdventureApp = () => {
     setWeather(mockWeather);
   }, []);
 
-  const optimizeItinerary = () => optimize(speak);
+  const handleOptimizeItinerary = () => optimize(speak);
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
@@ -80,7 +78,7 @@ const AdventureApp = () => {
         <ItineraryPanel
           itinerary={itinerary}
           removePOI={removePOI}
-          optimizeItinerary={optimizeItinerary}
+          optimizeItinerary={handleOptimizeItinerary}
           calculateTotalTime={calculateTotalTime}
           calculateTotalCost={calculateTotalCost}
           speak={speak}
